@@ -26,6 +26,7 @@ from pysearpc import SearpcError
 
 from seahub.auth.decorators import login_required_ajax
 from seahub.base.decorators import require_POST
+from seahub.base.extra_share_permission.models import ExtraSharePermission
 from seahub.forms import RepoRenameDirentForm
 from seahub.options.models import UserOptions, CryptoOptionNotSetError
 from seahub.notifications.models import UserNotification
@@ -220,6 +221,14 @@ def list_lib_dir(request, repo_id):
         err_msg = _(u'Permission denied.')
         return HttpResponse(json.dumps({'error': err_msg}),
                             status=403, content_type=content_type)
+
+    shared_repos_with_preview = ExtraSharePermission.objects. \
+            get_shared_repos_by_shared_with_preview(username)
+    if repo_id in shared_repos_with_preview:
+        result['is_preview'] = True
+    else:
+        result['is_preview'] = False
+    
 
     if repo.encrypted \
             and not seafile_api.is_password_set(repo.id, username):

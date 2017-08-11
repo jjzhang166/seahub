@@ -518,6 +518,7 @@ define([
                     user_perm: dir.user_perm,
                     no_quota: dir.no_quota,
                     encrypted: dir.encrypted,
+                    is_preview: dir.is_preview,
                     mode: this.view_mode,
                     path: dir.path,
                     repo_id: dir.repo_id,

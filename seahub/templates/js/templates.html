@@ -265,7 +265,7 @@
         <button id="download-dirents" title="{% trans 'Download' %}" class="op-btn sf2-icon-download op-icon"></button>
     </div>
     <% } %>
-    <% if (!encrypted && user_perm == 'r') { %>
+    <% if (!encrypted && user_perm == 'r' && !is_preview) { %>
     <div id="multi-dirents-op" class="hide">
         <button id="cp-dirents" title="{% trans 'Copy' %}" class="op-btn sf2-icon-copy op-icon"></button>
         <button id="download-dirents" title="{% trans 'Download' %}" class="op-btn sf2-icon-download op-icon"></button>
@@ -314,7 +314,7 @@
     </div>
     <% } %>
 
-    <% if (!encrypted && (can_generate_share_link || can_generate_upload_link || is_repo_owner)) { %>
+    <% if (!encrypted && (can_generate_share_link || can_generate_upload_link || is_repo_owner) && !is_preview) { %>
     <button class="op-btn" id="share-cur-dir">{% trans "Share" %}</button>
     <% } %>
     </div><!-- div#cur-dir-ops ends here -->
@@ -409,14 +409,16 @@
     <td class="dirent-op">
         <div class="op-container">
             <div class="displayed-op">
+                <% if (!is_preview) { %>
 
-                <a class="op-icon download sf2-icon-download sf2-x vh download-dir" href="#" title="{% trans "Download" %}" aria-label="{% trans "Download" %}"></a>
+                    <a class="op-icon download sf2-icon-download sf2-x vh download-dir" href="#" title="{% trans "Download" %}" aria-label="{% trans "Download" %}"></a>
 
-                <% if (!repo_encrypted && (can_generate_share_link || can_generate_upload_link || is_repo_owner)) { %>
-                    <a href="#" class="op-icon share sf2-icon-share sf2-x vh" title="{% trans "Share" %}" aria-label="{% trans "Share" %}"></a>
-                <% } %>
-                <% if (dirent.perm == 'rw') { %>
-                    <a href="#" class="op-icon delete sf2-icon-delete sf2-x vh" title="{% trans "Delete" %}" aria-label="{% trans "Delete" %}"></a>
+                    <% if (!repo_encrypted && (can_generate_share_link || can_generate_upload_link || is_repo_owner)) { %>
+                        <a href="#" class="op-icon share sf2-icon-share sf2-x vh" title="{% trans "Share" %}" aria-label="{% trans "Share" %}"></a>
+                    <% } %>
+                    <% if (dirent.perm == 'rw') { %>
+                        <a href="#" class="op-icon delete sf2-icon-delete sf2-x vh" title="{% trans "Delete" %}" aria-label="{% trans "Delete" %}"></a>
+                    <% } %>
                 <% } %>
             </div>
             <% if (dirent.perm == 'rw') { %>
@@ -433,7 +435,7 @@
                     <li><a class="op open-via-client" href="seafile://openfile?repo_id=<%- repo_id %>&path=<% print(encodeURIComponent(dirent_path + '/')); %>">{% trans "Open via Client" %}</a></li>
                 </ul>
             </div>
-            <% } else if (dirent.perm == 'r') { %>
+            <% } else if (dirent.perm == 'r' && !is_preview) { %>
             <div class="sf-dropdown sf-dropdown-inline">
                 <a href="#" class="more-op-icon sf2-icon-caret-down op-icon vh sf-dropdown-toggle" title="{% trans "More Operations" %}" aria-label="{% trans "More Operations" %}"></a>
                 <ul class="hidden-op dirent-hidden-op hide sf-dropdown-menu">
@@ -547,12 +549,14 @@
     <td class="dirent-op">
         <div class="op-container">
             <div class="displayed-op">
-                <a class="op-icon download sf2-icon-download sf2-x vh" href="<%= download_url %>" title="{% trans "Download" %}" aria-label="{% trans "Download" %}"></a>
-                <% if (!repo_encrypted && can_generate_share_link) { %>
-                <a href="#" class="op-icon share sf2-icon-share sf2-x vh" title="{% trans "Share" %}" aria-label="{% trans "Share" %}"></a>
-                <% } %>
-                <% if (dirent.perm == 'rw') { %>
-                    <a href="#" class="op-icon delete sf2-icon-delete sf2-x vh" title="{% trans "Delete" %}" aria-label="{% trans "Delete" %}"></a>
+                <% if (!is_preview) { %>
+                    <a class="op-icon download sf2-icon-download sf2-x vh" href="<%= download_url %>" title="{% trans "Download" %}" aria-label="{% trans "Download" %}"></a>
+                    <% if (!repo_encrypted && can_generate_share_link) { %>
+                    <a href="#" class="op-icon share sf2-icon-share sf2-x vh" title="{% trans "Share" %}" aria-label="{% trans "Share" %}"></a>
+                    <% } %>
+                    <% if (dirent.perm == 'rw') { %>
+                        <a href="#" class="op-icon delete sf2-icon-delete sf2-x vh" title="{% trans "Delete" %}" aria-label="{% trans "Delete" %}"></a>
+                    <% } %>
                 <% } %>
             </div>
             <% if (dirent.perm == 'rw') { %>
@@ -579,7 +583,7 @@
                     <li><a class="op open-via-client" href="seafile://openfile?repo_id=<%- repo_id %>&path=<% print(encodeURIComponent(dirent_path)); %>">{% trans "Open via Client" %}</a></li>
                 </ul>
             </div>
-            <% } else if (dirent.perm == 'r') { %>
+            <% } else if (dirent.perm == 'r' && !is_preview) { %>
             <div class="sf-dropdown sf-dropdown-inline">
                 <a class="more-op-icon sf2-icon-caret-down op-icon vh sf-dropdown-toggle" title="{% trans "More Operations" %}" aria-label="{% trans "More Operations" %}"></a>
                 <ul class="hidden-op dirent-hidden-op hide sf-dropdown-menu">
@@ -1035,7 +1039,10 @@
                             <select name="permission" class="share-permission-select w100">
                                 <option value="rw" selected="selected">{% trans "Read-Write" %}</option>
                                 <option value="r">{% trans "Read-Only" %}</option>
+                                <% if (!is_dirent) { %>
                                 <option value="admin">{% trans "Admin" %}</option>
+                                <option value="preview">{% trans "Only-Preview" %}</option>
+                                <% } %>
                             </select>
                         </td>
                         <td><input type="submit" value="{% trans "Submit" %}" class="submit" /></td>
@@ -1084,7 +1091,7 @@
     <td><a href="#shared-libs/lib/<%= id %>"><%- name %></a></td>
     <% if (is_admin) { %>
     <td class="alc">
-        <a href="#" class="sf2-icon-share sf2-x repo-share-btn op-icon vh" title="{% trans "Share" %}" aria-label="{% trans "Share" %}"></a>
+        <a href="#" class="sf2-icon-share sf2-x repo-share-btn op-icon vh" title="{% trans "Share" %}"></a>
         <a href="#" class="sf2-icon-delete sf2-x unshare-btn op-icon vh" title="{% trans "Leave Share" %}"></a>
     </td>
     <% } else { %>
@@ -1297,6 +1304,8 @@
                 {% trans "Read-Write" %}
             <% } else if (permission == 'admin'){ %>
                 {% trans "Admin" %}
+            <% } else if (permission == 'preview'){ %>
+                {% trans "Only-Preview" %}
             <% } else { %>
                 {% trans "Read-Only" %}
             <% } %>
@@ -1308,14 +1317,22 @@
                 <option value="rw" selected="selected" >{% trans "Read-Write" %}</option>
                 <option value="r" >{% trans "Read-Only" %}</option>
                 <option value="admin" >{% trans "Admin" %}</option>
+                <option value="preview" >{% trans "Only-Preview" %}</option>
             <% } else if (permission == 'admin') { %>
                 <option value="rw" >{% trans "Read-Write" %}</option>
                 <option value="r" >{% trans "Read-Only" %}</option>
                 <option value="admin" selected="selected" >{% trans "Admin" %}</option>
+                <option value="preview" >{% trans "Only-Preview" %}</option>
+            <% } else if (permission == 'preview') { %>
+                <option value="rw" >{% trans "Read-Write" %}</option>
+                <option value="r" >{% trans "Read-Only" %}</option>
+                <option value="admin" >{% trans "Admin" %}</option>
+                <option value="preview" selected="selected" >{% trans "Only-Preview" %}</option>
             <% } else { %>
                 <option value="rw" >{% trans "Read-Write" %}</option>
                 <option value="r" selected="selected" >{% trans "Read-Only" %}</option>
                 <option value="admin" >{% trans "Admin" %}</option>
+                <option value="preview" >{% trans "Only-Preview" %}</option>
             <% } %>
         </select>
     </td>

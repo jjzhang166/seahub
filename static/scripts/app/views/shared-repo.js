@@ -51,18 +51,12 @@ define([
 
             $.ajax({
                 url: Common.getUrl({name: 'beshared_repo', repo_id: this.model.get('id')})
-                    + "?share_type=personal&from=" + encodeURIComponent(this.model.get('owner')) 
-                    + "&share_from="+ encodeURIComponent(this.model.get('share_from')),
+                    + "?share_type=personal&from=" + encodeURIComponent(this.model.get('owner')),
                 type: 'DELETE',
                 beforeSend: Common.prepareCSRFToken,
                 dataType: 'json',
                 success: success_callback
             });
-            if (this.model.get('is_admin') == true){
-                $.ajax({
-
-                })
-            } 
 
             return false;
         },

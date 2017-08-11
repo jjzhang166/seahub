@@ -209,7 +209,7 @@ INSTALLED_APPS = (
     'seahub.api2',
     'seahub.avatar',
     'seahub.base',
-    'seahub.base.share_permission',
+    'seahub.base.extra_share_permission',
     'seahub.contacts',
     'seahub.institutions',
     'seahub.invitations',

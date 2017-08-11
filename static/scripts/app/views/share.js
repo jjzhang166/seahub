@@ -21,6 +21,7 @@ define([
             this.dirent_path = options.dirent_path;
             this.obj_name = options.obj_name;
             this.is_dir = options.is_dir;
+            this.is_dirent = options.is_dirent ? true : false;
 
             this.render();
 
@@ -71,7 +72,8 @@ define([
                 repo_id: this.repo_id,
                 can_generate_share_link: app.pageOptions.can_generate_share_link,
                 can_generate_upload_link: app.pageOptions.can_generate_upload_link,
-                repo_encrypted: this.repo_encrypted
+                repo_encrypted: this.repo_encrypted,
+                is_dirent: this.is_dirent
             }));
 
             return this;
@@ -720,8 +722,7 @@ define([
                         });
                         emails_input.select2("val", "");
                         $('[value="rw"]', $perm).attr('selected', 'selected');
-                        $('[value="r"]', $perm).removeAttr('selected');
-                        $('[value="admin"]', $perm).removeAttr('selected');
+                        $('[value="rw"]', $perm).nextAll().removeAttr('selected');
                         $error.addClass('hide');
                     }
                     if (data.failed.length > 0) {

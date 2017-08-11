@@ -18,7 +18,7 @@ define([
             owner_nickname: "-",
             permission: "rw",
             is_admin: false,
-            share_from: "",
+            is_preview: false
         },
 
         parse: function(response) {
