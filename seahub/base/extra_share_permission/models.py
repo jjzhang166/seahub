@@ -5,6 +5,10 @@ from django.db import models
 
 class ExtraSharePermissionManager(models.Manager):
     def get_user_permission(self, repo_id, username):
+        """Get user permission  in Library.
+        return
+            e.g. 'admin'
+        """
         record_list = super(ExtraSharePermissionManager, self).filter(
             repo_id=repo_id, share_to=username
         )
@@ -14,29 +18,41 @@ class ExtraSharePermissionManager(models.Manager):
             return None
 
     def get_shared_repos_by_shared_with_admin(self, username):
+        """Get repo id with the admin permission record.
+        """
         shared_repos = super(ExtraSharePermissionManager, self).filter(
             share_to=username, permission='admin'
         )
         return [e.repo_id for e in shared_repos]
 
     def get_shared_repos_by_shared_with_preview(self, username):
+        """Get repo id with preview permission record.
+        """
         shared_repos = super(ExtraSharePermissionManager, self).filter(
             share_to=username, permission='preview'
         )
         return [e.repo_id for e in shared_repos]
 
-    def get_permission_by_owner_shared(self, repo_id, username):
+    def get_permission_by_repo_id(self, repo_id):
+        """Gets the share and permissions of the record in the specified repo ID.
+        return
+            e.g. [('admin_user', 'admin'), ('pre_uesr', 'preview')]
+        """
         shared_repos = super(ExtraSharePermissionManager, self).filter(
             repo_id=repo_id
         )
-        shared_repos = [(e.share_to, e.permission) for e in shared_repos]
-        return shared_repos
+        
+        return [(e.share_to, e.permission) for e in shared_repos]
+
+    def get_permission(self):
+        res = super(ExtraSharePermissionManager, self).all()
+        return [(e.repo_id, (e.share_to, e.permission)) for e in res]
 
     def create_share_permission(self, repo_id, username, permission):
-        self.model(repo_id=repo_id,  share_to=username, 
+        self.model(repo_id=repo_id, share_to=username, 
                    permission=permission).save()
 
-    def delete_user_shared_repo(self, repo_id,  share_to):
+    def delete_user_shared_repo(self, repo_id, share_to):
         super(ExtraSharePermissionManager, self).filter(repo_id=repo_id, 
                                                    share_to=share_to).delete()
 

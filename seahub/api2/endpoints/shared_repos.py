@@ -16,6 +16,7 @@ from seahub.api2.throttling import UserRateThrottle
 from seahub.profile.models import Profile
 from seahub.utils import is_org_context, is_valid_username, send_perm_audit_msg
 from seahub.base.templatetags.seahub_tags import email2nickname, email2contact_email
+from seahub.base.extra_share_permission.models import ExtraSharePermission
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +53,7 @@ class SharedRepos(APIView):
 
         returned_result = []
         shared_repos.sort(lambda x, y: cmp(x.repo_name, y.repo_name))
+        extra_share_permission = ExtraSharePermission.objects.get_permission()
         for repo in shared_repos:
             if repo.is_virtual:
                     continue
