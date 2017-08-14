@@ -64,8 +64,7 @@ define([
                 can_generate_upload_link: app.pageOptions.can_generate_upload_link,
                 is_pro: is_pro,
                 file_audit_enabled: file_audit_enabled,
-                repo_encrypted: dir.encrypted,
-                is_preview: dir.is_preview
+                repo_encrypted: dir.encrypted
             }));
             this.$('.file-locked-icon').attr('title', gettext("locked by {placeholder}").replace('{placeholder}', this.model.get('lock_owner_name')));
             this.dropdown = new DropdownView({
@@ -360,8 +359,7 @@ define([
                 'repo_encrypted': false,
                 'is_dir': this.model.get('is_dir') ? true : false,
                 'dirent_path': dirent_path,
-                'obj_name': obj_name,
-                'is_dirent': true
+                'obj_name': obj_name
             };
             new ShareView(options);
 

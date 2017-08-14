@@ -61,7 +61,12 @@ define([
                 data: data,
                 beforeSend: Common.prepareCSRFToken,
                 success: function() {
-                    _this.model.set({'share_permission': perm});
+                    if (perm == 'admin'){
+                        _this.model.set({'is_admin': true});
+                        _this.model.set({'share_permission': 'rw'});
+                    } else {
+                        _this.model.set({'share_permission': perm});
+                    }
                     Common.feedback(gettext("Successfully modified permission"), 'success');
                 },
                 error: function(xhr) {
@@ -111,7 +116,8 @@ define([
                 'icon_url': icon_url,
                 'icon_title': this.model.getIconTitle(),
                 'url': this.model.getWebUrl(),
-                'name': this.model.get('repo_name')
+                'name': this.model.get('repo_name'),
+                'is_admin': this.model.get('is_admin')
             });
 
             this.$el.html(this.template(obj));

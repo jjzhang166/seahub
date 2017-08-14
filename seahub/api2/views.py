@@ -46,7 +46,7 @@ from seahub.avatar.templatetags.group_avatar_tags import api_grp_avatar_url, \
         grp_avatar
 from seahub.base.accounts import User
 from seahub.base.models import UserStarredFiles, DeviceToken
-from seahub.base.extra_share_permission.models import ExtraSharePermission
+from seahub.share.models import ExtraSharePermission
 from seahub.base.templatetags.seahub_tags import email2nickname, \
     translate_seahub_time, translate_commit_desc_escape, \
     email2contact_email
@@ -474,9 +474,13 @@ class Repos(APIView):
                 org_id = request.user.org.org_id
                 shared_repos = seafile_api.get_org_share_in_repo_list(org_id,
                         email, -1, -1)
+                repos_with_admin_share_to = OrgExtraSharePermission.objects.\
+                        get_repos_with_admin_share_to(email)
             else:
                 shared_repos = seafile_api.get_share_in_repo_list(
                         email, -1, -1)
+                repos_with_admin_share_to = ExtraSharePermission.objects.\
+                        get_repos_with_admin_share_to(email)
 
             # Reduce memcache fetch ops.
             owners_set = set([x.user for x in shared_repos])
@@ -488,8 +492,6 @@ class Repos(APIView):
                     nickname_dict[e] = email2nickname(e)
 
             shared_repos.sort(lambda x, y: cmp(y.last_modify, x.last_modify))
-            shared_repos_with_admin = ExtraSharePermission.objects. \
-                    get_shared_repos_by_shared_with_admin(email)
             for r in shared_repos:
                 r.password_need = is_passwd_set(r.repo_id, email)
                 repo = {
@@ -514,7 +516,7 @@ class Repos(APIView):
                 }
                 
 
-                if r.repo_id in shared_repos_with_admin:
+                if r.repo_id in repos_with_admin_share_to:
                     repo['is_admin'] = True
                 else:
                     repo['is_admin'] = False

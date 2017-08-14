@@ -150,6 +150,73 @@ class FileShareManager(models.Manager):
     def get_valid_dir_link_by_token(self, token):
         return self._get_valid_file_share_by_token(token)
 
+
+class ExtraSharePermissionManager(models.Manager):
+    def get_user_permission(self, repo_id, username):
+        """Get user permission  in Library.
+        return
+            e.g. 'admin'
+        """
+        record_list = super(ExtraSharePermissionManager, self).filter(
+            repo_id=repo_id, share_to=username
+        )
+        if len(record_list) > 0:
+            return record_list[0].permission
+        else:
+            return None
+
+    def get_repos_with_admin_share_to(self, username):
+        """Get repo id with the admin permission record.
+        """
+        shared_repos = super(ExtraSharePermissionManager, self).filter(
+            share_to=username, permission='admin'
+        )
+        return [e.repo_id for e in shared_repos]
+
+    def get_users_by_repo_and_admin(self, repo_id):
+        """Gets the share and permissions of the record in the specified repo ID.
+        return
+            e.g. ['admin_user1', 'admin_user2']
+        """
+        shared_repos = super(ExtraSharePermissionManager, self).filter(
+            repo_id=repo_id, permission='admin'
+        )
+
+        return [e.share_to for e in shared_repos]
+
+    def get_records(self):
+        res = super(ExtraSharePermissionManager, self).filter(permission='admin')
+        return [(e.repo_id, e.share_to) for e in res]
+
+    def create_share_permission(self, repo_id, username, permission):
+        self.model(repo_id=repo_id, share_to=username, 
+                   permission=permission).save()
+
+    def delete_share_permission(self, repo_id, share_to):
+        super(ExtraSharePermissionManager, self).filter(repo_id=repo_id, 
+                                                   share_to=share_to).delete()
+
+    def update_share_permission(self, repo_id, share_to, permission):
+        super(ExtraSharePermissionManager, self).filter(repo_id=repo_id, 
+                                                   share_to=share_to).delete()
+        if permission in ['admin', 'preview']:
+            self.create_share_permission(repo_id, share_to, permission)
+
+
+class ExtraSharePermission(models.Model):
+    repo_id = models.CharField(max_length=36, db_index=True)
+    share_to = models.CharField(max_length=255, db_index=True)
+    permission = models.CharField(max_length=30)
+    objects = ExtraSharePermissionManager()
+
+
+class OrgExtraSharePermission(models.Model):
+    repo_id = models.CharField(max_length=36, db_index=True)
+    share_to = models.CharField(max_length=255, db_index=True)
+    permission = models.CharField(max_length=30)
+    objects = ExtraSharePermissionManager()
+
+
 class FileShare(models.Model):
     """
     Model used for file or dir shared link.

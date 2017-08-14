@@ -12,7 +12,7 @@ from seahub.api2.authentication import TokenAuthentication
 from seahub.api2.throttling import UserRateThrottle
 from seahub.api2.utils import api_error
 from seahub.utils import is_valid_username, is_org_context
-from seahub.base.extra_share_permission.models import ExtraSharePermission
+from seahub.share.models import ExtraSharePermission, OrgExtraSharePermission
 
 json_content_type = 'application/json; charset=utf-8'
 
@@ -29,8 +29,6 @@ class BeSharedRepo(APIView):
         username = request.user.username
         share_type = request.GET.get('share_type', None)
         if share_type == 'personal':
-            ExtraSharePermission.objects.delete_user_shared_repo(repo_id, 
-                                                                 username)
 
             from_email = request.GET.get('from', None)
             if not is_valid_username(from_email):
@@ -42,8 +40,12 @@ class BeSharedRepo(APIView):
                                                                repo_id,
                                                                from_email,
                                                                username)
+                OrgExtraSharePermission.objects.delete_share_permission(repo_id, 
+                                                                     username)
             else:
                 seaserv.remove_share(repo_id, from_email, username)
+                ExtraSharePermission.objects.delete_share_permission(repo_id, 
+                                                                     username)
 
         elif share_type == 'group':
 
