@@ -39,21 +39,21 @@ class ExtraSharePermissionTest(BaseTestCase):
 
     def test_can_get_shared_repos_with_admin(self):
         self.assertEqual([], ExtraSharePermission.objects.\
-                        get_repos_with_admin_share_to(self.user.username))
+                        get_repos_with_admin_permission(self.user.username))
         ExtraSharePermission.objects.create_share_permission(self.repo.id, 
                                                              self.user.username, 
                                                              'admin')
         self.assertEqual([self.repo.id], ExtraSharePermission.objects.\
-                        get_repos_with_admin_share_to(self.user.username))
+                        get_repos_with_admin_permission(self.user.username))
 
     def test_get_permission_by_owner_shared(self):
         self.assertEqual([], ExtraSharePermission.objects.\
-                        get_users_by_repo_and_admin(self.repo.id))
+                        get_admin_users_by_repo(self.repo.id))
         ExtraSharePermission.objects.create_share_permission(self.repo.id, 
                                                              self.user.username, 
                                                              'admin')
         self.assertEqual([self.user.username], ExtraSharePermission.objects.\
-                        get_users_by_repo_and_admin(self.repo.id))
+                        get_admin_users_by_repo(self.repo.id))
 
     def test_batch_is_admin(self):
         r = seafile_api.get_repo(self.create_repo(name='repo2',

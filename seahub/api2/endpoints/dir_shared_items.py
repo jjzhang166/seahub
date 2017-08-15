@@ -62,7 +62,7 @@ class DirSharedItemsEndpoint(APIView):
                                                                       path, username)
 
         # change is_admin to True if user is repo admin.
-        admin_users = ExtraSharePermission.objects.get_users_by_repo_and_admin(repo_id)
+        admin_users = ExtraSharePermission.objects.get_admin_users_by_repo(repo_id)
         ret = []
         for item in share_items:
             data = {

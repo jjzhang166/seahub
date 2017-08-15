@@ -55,7 +55,7 @@ class SharedRepos(APIView):
 
         returned_result = []
         shared_repos.sort(lambda x, y: cmp(x.repo_name, y.repo_name))
-        shared_repoid_fix = set(ExtraSharePermission.objects.get_repos_with_admin_share_to(username))
+        shared_repoid_fix = set(ExtraSharePermission.objects.get_repos_with_admin_permission(username))
         for repo in shared_repos:
             if repo.is_virtual:
                     continue

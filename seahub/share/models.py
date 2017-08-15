@@ -155,7 +155,7 @@ class FileShareManager(models.Manager):
 
 class ExtraSharePermissionManager(models.Manager):
     def get_user_permission(self, repo_id, username):
-        """Get user permission  in Library.
+        """Get user's permission of a library.
         return
             e.g. 'admin'
         """
@@ -167,15 +167,15 @@ class ExtraSharePermissionManager(models.Manager):
         else:
             return None
 
-    def get_repos_with_admin_share_to(self, username):
-        """Get repo id with the admin permission record.
+    def get_repos_with_admin_permission(self, username):
+        """Get repo id list a user has admin permission.
         """
         shared_repos = super(ExtraSharePermissionManager, self).filter(
             share_to=username, permission='admin'
         )
         return [e.repo_id for e in shared_repos]
 
-    def get_users_by_repo_and_admin(self, repo_id):
+    def get_admin_users_by_repo(self, repo_id):
         """Gets the share and permissions of the record in the specified repo ID.
         return
             e.g. ['admin_user1', 'admin_user2']
