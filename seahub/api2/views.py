@@ -474,13 +474,11 @@ class Repos(APIView):
                 org_id = request.user.org.org_id
                 shared_repos = seafile_api.get_org_share_in_repo_list(org_id,
                         email, -1, -1)
-                repos_with_admin_share_to = OrgExtraSharePermission.objects.\
-                        get_repos_with_admin_share_to(email)
             else:
                 shared_repos = seafile_api.get_share_in_repo_list(
                         email, -1, -1)
-                repos_with_admin_share_to = ExtraSharePermission.objects.\
-                        get_repos_with_admin_share_to(email)
+            repos_with_admin_share_to = ExtraSharePermission.objects.\
+                    get_repos_with_admin_share_to(email)
 
             # Reduce memcache fetch ops.
             owners_set = set([x.user for x in shared_repos])

@@ -16,7 +16,7 @@ from seahub.api2.throttling import UserRateThrottle
 from seahub.profile.models import Profile
 from seahub.utils import is_org_context, is_valid_username, send_perm_audit_msg
 from seahub.base.templatetags.seahub_tags import email2nickname, email2contact_email
-from seahub.share.models import ExtraSharePermission, OrgExtraSharePermission
+from seahub.share.models import ExtraSharePermission
 
 logger = logging.getLogger(__name__)
 
@@ -41,15 +41,11 @@ class SharedRepos(APIView):
                 shared_repos += seafile_api.get_org_share_out_repo_list(org_id, username, -1, -1)
                 shared_repos += seaserv.seafserv_threaded_rpc.get_org_group_repos_by_owner(org_id, username)
                 shared_repos += seaserv.seafserv_threaded_rpc.list_org_inner_pub_repos_by_owner(org_id, username)
-                shared_repoid_fix = set(OrgExtraSharePermission.objects.get_repos_with_admin_share_to(username))
-                extra_share_permission = OrgExtraSharePermission.objects.get_records()
             else:
                 shared_repos += seafile_api.get_share_out_repo_list(username, -1, -1)
                 shared_repos += seafile_api.get_group_repos_by_owner(username)
                 if not request.cloud_mode:
                     shared_repos += seafile_api.list_inner_pub_repos_by_owner(username)
-                shared_repoid_fix = set(ExtraSharePermission.objects.get_repos_with_admin_share_to(username))
-                extra_share_permission = ExtraSharePermission.objects.get_records()
         except Exception as e:
             logger.error(e)
             error_msg = 'Internal Server Error'
@@ -57,6 +53,8 @@ class SharedRepos(APIView):
 
         returned_result = []
         shared_repos.sort(lambda x, y: cmp(x.repo_name, y.repo_name))
+        shared_repoid_fix = set(ExtraSharePermission.objects.get_repos_with_admin_share_to(username))
+        extra_share_permission = ExtraSharePermission.objects.get_records()
         for repo in shared_repos:
             if repo.is_virtual:
                     continue
@@ -149,16 +147,10 @@ class SharedRepo(APIView):
             repo_owner = seafile_api.get_repo_owner(repo_id)
 
         if share_type == 'personal':
-            if is_org_context(request):
-                if username != repo_owner and OrgExtraSharePermission.objects.\
-                   get_user_permission(repo_id, username) != 'admin':
-                    error_msg = 'Permission denied.'
-                    return api_error(status.HTTP_403_FORBIDDEN, error_msg)
-            else:
-                if username != repo_owner and ExtraSharePermission.objects.\
-                   get_user_permission(repo_id, username) != 'admin':
-                    error_msg = 'Permission denied.'
-                    return api_error(status.HTTP_403_FORBIDDEN, error_msg)
+            if username != repo_owner and ExtraSharePermission.objects.\
+               get_user_permission(repo_id, username) != 'admin':
+                error_msg = 'Permission denied.'
+                return api_error(status.HTTP_403_FORBIDDEN, error_msg)
         else:
             if username != repo_owner:
                 return api_error(status.HTTP_403_FORBIDDEN, error_msg)
@@ -272,16 +264,10 @@ class SharedRepo(APIView):
         else:
             repo_owner = seafile_api.get_repo_owner(repo_id)
 
-        if is_org_context(request) and request.user.org.org_id:
-            if username != repo_owner and OrgExtraSharePermission.objects.\
-               get_user_permission(repo_id, username) != 'admin':
-                error_msg = 'Permission denied.'
-                return api_error(status.HTTP_403_FORBIDDEN, error_msg)
-        else:
-            if username != repo_owner and ExtraSharePermission.objects.\
-               get_user_permission(repo_id, username) != 'admin':
-                error_msg = 'Permission denied.'
-                return api_error(status.HTTP_403_FORBIDDEN, error_msg)
+        if username != repo_owner and ExtraSharePermission.objects.\
+           get_user_permission(repo_id, username) != 'admin':
+            error_msg = 'Permission denied.'
+            return api_error(status.HTTP_403_FORBIDDEN, error_msg)
 
         # delete share
         org_id = None
@@ -302,10 +288,9 @@ class SharedRepo(APIView):
                 if org_id:
                     seafile_api.org_remove_share(org_id, repo_id,
                                                  username, user)
-                    OrgExtraSharePermission.objects.delete_share_permission(repo_id, user)
                 else:
                     seafile_api.remove_share(repo_id, username, user)
-                    ExtraSharePermission.objects.delete_share_permission(repo_id, user)
+                ExtraSharePermission.objects.delete_share_permission(repo_id, user)
             except Exception as e:
                 logger.error(e)
                 error_msg = 'Internal Server Error'

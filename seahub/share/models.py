@@ -210,13 +210,6 @@ class ExtraSharePermission(models.Model):
     objects = ExtraSharePermissionManager()
 
 
-class OrgExtraSharePermission(models.Model):
-    repo_id = models.CharField(max_length=36, db_index=True)
-    share_to = models.CharField(max_length=255, db_index=True)
-    permission = models.CharField(max_length=30)
-    objects = ExtraSharePermissionManager()
-
-
 class FileShare(models.Model):
     """
     Model used for file or dir shared link.
