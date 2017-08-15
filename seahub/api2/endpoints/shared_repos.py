@@ -17,6 +17,8 @@ from seahub.profile.models import Profile
 from seahub.utils import is_org_context, is_valid_username, send_perm_audit_msg
 from seahub.base.templatetags.seahub_tags import email2nickname, email2contact_email
 from seahub.share.models import ExtraSharePermission
+from seahub.constants import SUPPORTED_SHARE_PERMISSIONS, \
+        SEAFILE_SUPPORTED_SHARE_PERMISSIONS
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +56,6 @@ class SharedRepos(APIView):
         returned_result = []
         shared_repos.sort(lambda x, y: cmp(x.repo_name, y.repo_name))
         shared_repoid_fix = set(ExtraSharePermission.objects.get_repos_with_admin_share_to(username))
-        extra_share_permission = ExtraSharePermission.objects.get_records()
         for repo in shared_repos:
             if repo.is_virtual:
                     continue
@@ -78,11 +79,9 @@ class SharedRepos(APIView):
                 result['group_id'] = repo.group_id
                 result['group_name'] = group.group_name
 
-            if (repo.repo_id, repo.user) in extra_share_permission:
-                result['is_admin'] = True
-
             returned_result.append(result)
 
+        # The repo admin won't get records form seafile, so get it manually.
         for repo_id in shared_repoid_fix:
             temp_repo = seafile_api.list_repo_shared_to(seafile_api.get_repo_owner(repo_id), repo_id)
             repo_obj = seafile_api.get_repo(repo_id)
@@ -98,10 +97,16 @@ class SharedRepos(APIView):
                 result['user_name'] = email2nickname(repo.user)
                 result['user_email'] = repo.user
                 result['contact_email'] = Profile.objects.get_contact_email_by_user(repo.user)
-                if ExtraSharePermission.objects.\
-                   get_user_permission(repo_id, repo.user) == 'admin':
-                    result['is_admin'] = True
                 returned_result.append(result)
+
+        # Batch obtain whether the user is admin for the specified repo.
+        batch_data = [(e['repo_id'], e['user_email']) for e in returned_result]
+        res_batch_data = ExtraSharePermission.objects.batch_is_admin(batch_data)
+        for result in returned_result:
+            if (result['repo_id'], result['user_email']) in res_batch_data:
+                result['is_admin'] = True
+            else:
+                result['is_admin'] = False
 
         return Response(returned_result)
 
@@ -120,7 +125,7 @@ class SharedRepo(APIView):
 
         # argument check
         permission = request.data.get('permission', None)
-        if permission not in ['r', 'rw', 'admin']:
+        if permission not in SUPPORTED_SHARE_PERMISSIONS:
             error_msg = 'permission invalid.'
             return api_error(status.HTTP_400_BAD_REQUEST, error_msg)
 
@@ -157,6 +162,7 @@ class SharedRepo(APIView):
 
         # update share permission
         if share_type == 'personal':
+            username = repo_owner
             shared_to = request.data.get('user', None)
             if not shared_to or not is_valid_username(shared_to):
                 error_msg = 'user invalid.'
@@ -165,7 +171,7 @@ class SharedRepo(APIView):
             ExtraSharePermission.objects.update_share_permission(repo_id, 
                                                                  shared_to, 
                                                                  permission)
-            if permission not in ['r', 'rw']:
+            if permission not in SEAFILE_SUPPORTED_SHARE_PERMISSIONS:
                 permission = 'rw' if permission == 'admin' else 'r'
 
             try:
@@ -275,6 +281,7 @@ class SharedRepo(APIView):
             org_id = request.user.org.org_id
 
         if share_type == 'personal':
+            username = repo_owner
             user = request.GET.get('user', None)
             if not user or not is_valid_username(user):
                 error_msg = 'user invalid.'

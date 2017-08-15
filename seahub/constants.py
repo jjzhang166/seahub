@@ -4,3 +4,9 @@ DEFAULT_USER = 'default'
 
 # Guest user have limited operations, can not create group and library.
 GUEST_USER = 'guest'
+
+# Supported share permissions
+SUPPORTED_SHARE_PERMISSIONS = ['r', 'rw', 'admin']
+
+# Seafile Server Supported share permissions
+SEAFILE_SUPPORTED_SHARE_PERMISSIONS = ['r', 'rw']

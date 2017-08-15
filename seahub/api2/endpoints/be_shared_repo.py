@@ -43,6 +43,7 @@ class BeSharedRepo(APIView):
             else:
                 seaserv.remove_share(repo_id, from_email, username)
 
+            # Delete data of ExtraSharePermission table.
             ExtraSharePermission.objects.delete_share_permission(repo_id, 
                                                                  username)
 

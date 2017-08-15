@@ -25,6 +25,8 @@ from seahub.share.signals import share_repo_to_user_successful, \
     share_repo_to_group_successful
 from seahub.utils import (is_org_context, is_valid_username,
                           send_perm_audit_msg)
+from seahub.constants import SUPPORTED_SHARE_PERMISSIONS, \
+    SEAFILE_SUPPORTED_SHARE_PERMISSIONS
 
 
 logger = logging.getLogger(__name__)
@@ -40,9 +42,10 @@ class DirSharedItemsEndpoint(APIView):
     throttle_classes = (UserRateThrottle,)
 
     def list_user_shared_items(self, request, repo_id, path):
-        username = seafile_api.get_repo_owner(repo_id)
 
         if is_org_context(request):
+            # when calling seafile API to share authority related functions, change the uesrname to repo owner.
+            username = seafile_api.get_org_repo_owner(repo_id)
             org_id = request.user.org.org_id
             if path == '/':
                 share_items = seafile_api.list_org_repo_shared_to(org_id,
@@ -51,11 +54,14 @@ class DirSharedItemsEndpoint(APIView):
                 share_items = seafile_api.get_org_shared_users_for_subdir(org_id,
                         repo_id, path, username)
         else:
+            username = seafile_api.get_repo_owner(repo_id)
             if path == '/':
                 share_items = seafile_api.list_repo_shared_to(username, repo_id)
             else:
                 share_items = seafile_api.get_shared_users_for_subdir(repo_id,
                                                                       path, username)
+
+        # change is_admin to True if user is repo admin.
         admin_users = ExtraSharePermission.objects.get_users_by_repo_and_admin(repo_id)
         ret = []
         for item in share_items:
@@ -182,7 +188,7 @@ class DirSharedItemsEndpoint(APIView):
             return api_error(status.HTTP_404_NOT_FOUND, 'Folder %s not found.' % path)
 
         permission = request.data.get('permission', 'r')
-        if permission not in ['r', 'rw', 'admin']:
+        if permission not in SUPPORTED_SHARE_PERMISSIONS:
             return api_error(status.HTTP_400_BAD_REQUEST, 'permission invalid.')
 
         shared_to_user, shared_to_group = self.handle_shared_to_args(request)
@@ -205,12 +211,12 @@ class DirSharedItemsEndpoint(APIView):
                 return api_error(status.HTTP_400_BAD_REQUEST, 'Invalid user, should be registered')
 
             extra_share_permission = ""
-            if permission not in ['r', 'rw']:
+            if permission not in SEAFILE_SUPPORTED_SHARE_PERMISSIONS:
                 extra_share_permission = permission
                 permission = 'rw' if permission == 'admin' else 'r'
 
-            username = seafile_api.get_repo_owner(repo_id)
             if is_org_context(request):
+                username = seafile_api.get_org_repo_owner(repo_id)
                 org_id = request.user.org.org_id
                 if path == '/':
                     seafile_api.org_set_share_permission(
@@ -219,6 +225,7 @@ class DirSharedItemsEndpoint(APIView):
                     seafile_api.org_update_share_subdir_perm_for_user(
                             org_id, repo_id, path, username, shared_to, permission)
             else:
+                username = seafile_api.get_repo_owner(repo_id)
                 if path == '/':
                     seafile_api.set_share_permission(
                             repo_id, username, shared_to, permission)
@@ -287,7 +294,7 @@ class DirSharedItemsEndpoint(APIView):
                 return api_error(status.HTTP_403_FORBIDDEN, 'Permission denied.')
 
         permission = request.data.get('permission', 'r')
-        if permission not in ['r', 'rw', 'admin']:
+        if permission not in SUPPORTED_SHARE_PERMISSIONS:
             return api_error(status.HTTP_400_BAD_REQUEST, 'permission invalid.')
 
         result = {}
@@ -321,13 +328,13 @@ class DirSharedItemsEndpoint(APIView):
                     continue
 
                 try:
-                    username = seafile_api.get_repo_owner(repo_id)
                     extra_share_permission = ''
                     if permission == 'admin':
                         extra_share_permission = 'admin'
                         permission = 'rw'
 
                     if is_org_context(request):
+                        username = seafile_api.get_org_repo_owner(repo_id)
                         org_id = request.user.org.org_id
                         if path == '/':
                             seaserv.seafserv_threaded_rpc.org_add_share(
@@ -337,6 +344,7 @@ class DirSharedItemsEndpoint(APIView):
                             sub_repo_id = seafile_api.org_share_subdir_to_user(org_id,
                                     repo_id, path, username, to_user, permission)
                     else:
+                        username = seafile_api.get_repo_owner(repo_id)
                         if path == '/':
                             seafile_api.share_repo(
                                     repo_id, username, to_user, permission)
@@ -470,8 +478,8 @@ class DirSharedItemsEndpoint(APIView):
             permission = seafile_api.check_permission_by_path(
                     repo_id, '/', shared_to)
 
-            username = seafile_api.get_repo_owner(repo_id)
             if is_org_context(request):
+                username = seafile_api.get_org_repo_owner(repo_id)
                 org_id = request.user.org.org_id
                 if path == '/':
                     seaserv.seafserv_threaded_rpc.org_remove_share(
@@ -481,13 +489,14 @@ class DirSharedItemsEndpoint(APIView):
                             org_id, repo_id, path, username, shared_to)
 
             else:
+                username = seafile_api.get_repo_owner(repo_id)
                 if path == '/':
                     seaserv.remove_share(repo_id, username, shared_to)
                 else:
                     seafile_api.unshare_subdir_for_user(
                             repo_id, path, username, shared_to)
 
-            # delete share permission at ExtraSharePermission Table
+            # Delete share permission at ExtraSharePermission table.
             if path == '/':
                 ExtraSharePermission.objects.delete_share_permission(repo_id, 
                                                                      shared_to)

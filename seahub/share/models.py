@@ -1,8 +1,10 @@
 # Copyright (c) 2012-2016 Seafile Ltd.
+import operator
 import datetime
 import logging
 
 from django.db import models
+from django.db.models import Q
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth.hashers import make_password, check_password
@@ -184,9 +186,22 @@ class ExtraSharePermissionManager(models.Manager):
 
         return [e.share_to for e in shared_repos]
 
-    def get_records(self):
-        res = super(ExtraSharePermissionManager, self).filter(permission='admin')
-        return [(e.repo_id, e.share_to) for e in res]
+    def batch_is_admin(self, in_datas):
+        """return the data that input data is admin 
+        e.g.
+            in_datas:
+                [(repo_id1, username1), (repo_id2, admin1)]
+            return:
+                [(repo_id2, admin1)]
+        """
+        if len(in_datas) <= 0:
+            return []
+        query = reduce(
+            operator.or_,
+            (Q(repo_id=data[0], share_to=data[1]) for data in in_datas)
+        )
+        db_data = super(ExtraSharePermissionManager, self).filter(query).filter(permission='admin')
+        return [(e.repo_id, e.share_to) for e in db_data]
 
     def create_share_permission(self, repo_id, username, permission):
         self.model(repo_id=repo_id, share_to=username, 
